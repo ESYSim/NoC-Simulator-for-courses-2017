@@ -1,0 +1,54 @@
+<Argumentconfiguration version="3.0" compile="make" name="ESYNet Simulator" exec="./esynet">
+    <Argu darg="" dval="0" loop="0" value="0" argument="-network_cfg_file_enable" note="enable network configuration file" type="3" extension=""/>
+    <Argu darg="-network_cfg_file_enable" dval="1" loop="0" value="../example/routercfg.txt" argument="-router_cfg_file_name" note="router configuration file name" type="8" extension="netcfg"/>
+    <Argu darg="-!network_cfg_file_enable" dval="1" loop="0" value="64" argument="-router_num" note="Total number of routers" type="1" extension=""/>
+    <Argu darg="-!network_cfg_file_enable" dval="1" loop="0" value="8 8" argument="-array_size" note="k-ary network" type="5" extension=""/>
+    <Argu darg="-!network_cfg_file_enable" dval="1" loop="0" value="7" argument="-phy_number" note="number of physical port of a router" type="1" extension=""/>
+    <Argu darg="-!network_cfg_file_enable" dval="1" loop="0" value="1" argument="-vc_number" note="VC per physical port" type="1" extension=""/>
+    <Argu darg="-!network_cfg_file_enable" dval="1" loop="0" value="12" argument="-in_buffer_size" note="buffer size of each VC" type="1" extension=""/>
+    <Argu darg="-!network_cfg_file_enable" dval="1" loop="0" value="12" argument="-out_buffer_size" note="output buffer size" type="1" extension=""/>
+    <Argu darg="" dval="0" loop="0" value="32" argument="-data_path_width" note="width of data path, i.e. num. of bits" type="1" extension=""/>
+    <Argu darg="" dval="0" loop="0" value="1000" argument="-link_length" note="link length #num" type="2" extension=""/>
+    <Argu darg="" dval="0" loop="0" value="XY" argument="-routing_alg" note="Code of chosen routing algorithm&#xa;Options: XY, TXY, DyXY, FTLR, HiPFaR, CoreRescuer, ERescuer, AlterTest, NonBlock, " type="11" extension=""/>
+    <Argu darg="" dval="0" loop="0" value="1" argument="-random_seed" note="random seed used for generate random number" type="1" extension=""/>
+    <Argu darg="" dval="0" loop="0" value="1" argument="-simulation_period" note="simulation period, #cycle" type="2" extension=""/>
+    <Argu darg="" dval="0" loop="0" value="10000" argument="-sim_length" note="simulation length, i.e. 10,000,000 cycles" type="2" extension=""/>
+    <Argu darg="" dval="0" loop="0" value="0" argument="-traffic_injection_disable" note="disable traffic injection" type="3" extension=""/>
+    <Argu darg="-!traffic_injection_disable" dval="1" loop="0" value="0" argument="-input_trace_enable" note="input trace file is used instead of PE" type="3" extension=""/>
+    <Argu darg="-!traffic_injection_disable -input_trace_enable" dval="1" loop="0" value="0" argument="-input_trace_file_text_enable" note="input trace file is text format" type="3" extension=""/>
+    <Argu darg="-!traffic_injection_disable -input_trace_enable" dval="1" loop="0" value="10000" argument="-input_trace_buffer_size" note="buffer size of input trace interface" type="1" extension=""/>
+    <Argu darg="-!traffic_injection_disable -input_trace_enable" dval="1" loop="0" value="../example/benchmark" argument="-input_trace_file_name" note="including information about packet injection" type="10" extension="bench"/>
+    <Argu darg="-!traffic_injection_disable -!input_trace_enable" dval="1" loop="0" value="Uniform" argument="-traffic_rule" note="rule to generate trace&#xa;Options: Uniform, Transpose1, Transpose2, Bitreversal, Butterfly, Shuffle, " type="11" extension=""/>
+    <Argu darg="-!traffic_injection_disable -!input_trace_enable" dval="1" loop="0" value="0.1" argument="-traffic_pir" note="packet inject rate (packet/cycle/node)" type="2" extension=""/>
+    <Argu darg="-!traffic_injection_disable -!input_trace_enable" dval="1" loop="0" value="5" argument="-packet_size" note="number of flits in a packet" type="1" extension=""/>
+    <Argu darg="-!input_trace_enable.+" dval="0" loop="0" value="0" argument="-output_trace_enable" note="enable output traffic trace" type="3" extension=""/>
+    <Argu darg="-!input_trace_enable.+-output_trace_enable" dval="1" loop="0" value="0" argument="-output_trace_file_text_enable" note="output trace file is text format" type="3" extension=""/>
+    <Argu darg="-!input_trace_enable.+-output_trace_enable" dval="1" loop="0" value="10000" argument="-output_trace_buffer_size" note="buffer size of output trace interface" type="1" extension=""/>
+    <Argu darg="-!input_trace_enable.+-output_trace_enable" dval="1" loop="0" value="../example/benchmark" argument="-output_trace_file_name" note="record information about packet injection" type="10" extension="bench"/>
+    <Argu darg="" dval="0" loop="0" value="0" argument="-event_trace_enable" note="enable event trace" type="3" extension=""/>
+    <Argu darg="-event_trace_enable" dval="1" loop="0" value="0" argument="-event_trace_file_text_enable" note="event trace file is text format" type="3" extension=""/>
+    <Argu darg="-event_trace_enable" dval="1" loop="0" value="10000" argument="-event_trace_buffer_size" note="buffer size of event trace interface" type="1" extension=""/>
+    <Argu darg="-event_trace_enable" dval="1" loop="0" value="../example/event" argument="-event_trace_file_name" note="event trace file name" type="9" extension="event"/>
+    <Argu darg="" dval="0" loop="0" value="2" argument="-event_trace_cout_enable" note="enable event trace to cout" type="3" extension=""/>
+    <Argu darg="" dval="0" loop="0" value="0" argument="-fault_inject_enable" note="enable fault injection" type="3" extension=""/>
+    <Argu darg="-fault_inject_enable" dval="1" loop="0" value="../example/faultinject" argument="-fault_inject_file_name" note="fault injection file name" type="10" extension="fcfg"/>
+    <Argu darg="-fault_inject_enable" dval="1" loop="0" value="" argument="-fault_inject_inline" note="fault injection items, in line format" type="4" extension=""/>
+    <Argu darg="" dval="0" loop="0" value="0" argument="-ecc_enable" note="Enable Error Correcting Code" type="3" extension=""/>
+    <Argu darg="-ecc_enable" dval="1" loop="0" value="0" argument="-ecc_fip_enable" note="Enable Fault Injection of ECC" type="3" extension=""/>
+    <Argu darg="-ecc_enable" dval="1" loop="0" value="HM74" argument="-ecc_name" note="name of Error Correcting Code&#xa;Options: HM74, HM128, HM2216, HM3932, " type="11" extension=""/>
+    <Argu darg="-ecc_enable" dval="1" loop="0" value="H2H" argument="-ecc_strategy" note="strategy to place Error Correcting Code unit&#xa;Options: H2H, E2E, COUNT, CROSS, SLOPE, SQUARE, " type="11" extension=""/>
+    <Argu darg="-ecc_enable" dval="1" loop="0" value="1" argument="-ecc_space" note="space for ecc strategy, invalid for E2E or H2H" type="1" extension=""/>
+    <Argu darg="" dval="0" loop="0" value="0" argument="-e2e_ack_enable" note="enable acknoledge packets" type="3" extension=""/>
+    <Argu darg="-e2e_ack_enable" dval="1" loop="0" value="0" argument="-e2e_retrans_enable" note="enable retransmission mechanism" type="3" extension=""/>
+    <Argu darg="-e2e_ack_enable" dval="1" loop="0" value="10000" argument="-e2e_retrans_timer_max" note="maximum value for retransmission timer" type="2" extension=""/>
+    <Argu darg="" dval="0" loop="0" value="0" argument="-bist_enable" note="enable Build-in Self-Test" type="3" extension=""/>
+    <Argu darg="-bist_enable" dval="1" loop="0" value="TARRA" argument="-bist_type_code" note="BIST type code&#xa;Options: TARRA, Blocking, NonBlock, " type="11" extension=""/>
+    <Argu darg="-bist_enable" dval="1" loop="0" value="10000" argument="-bist_interval" note="time between BIST for two routers" type="1" extension=""/>
+    <Argu darg="-bist_enable" dval="1" loop="0" value="500" argument="-bist_timing" note="timing for Build-in Self-Test" type="5" extension=""/>
+    <Argu darg="-bist_enable" dval="1" loop="0" value="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0" argument="-bist_flit" note="testing flit for Build-in Self-Test to one destination" type="5" extension=""/>
+    <Argu darg="-bist_enable" dval="1" loop="0" value="0" argument="-bist_offset" note="offset of testing sequence" type="1" extension=""/>
+    <Argu darg="" dval="0" loop="0" value="-1" argument="-injected_packet" note="total number of injected packets" type="1" extension=""/>
+    <Argu darg="" dval="0" loop="0" value="0" argument="-warmup_packet" note="packet number in warmup phase" type="1" extension=""/>
+    <Argu darg="" dval="0" loop="0" value="-1" argument="-latency_measure_packet" note="packet number for latency measurement" type="1" extension=""/>
+    <Argu darg="" dval="0" loop="0" value="-1" argument="-throughput_measure_packet" note="packet number for throughput measurement" type="1" extension=""/>
+</Argumentconfiguration>
