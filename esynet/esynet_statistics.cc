@@ -45,47 +45,54 @@ void EsynetRouterStatistic::add(const EsynetRouterStatistic& t)
 }
 
 EsynetNIStatistic::EsynetNIStatistic() :
-    m_inject_packet( 0 ),
-    m_accept_packet( 0 ),
-    m_accept_start_time( 0.0 ),
-    m_accept_stop_time( 0.0 ),
-    m_accept_mark_packet( 0 ),
+    m_injected_packet( 0 ),
+    m_inject_start_time( -1 ),
+    m_inject_stop_time( -1 ),
+    m_accepted_packet( 0 ),
+    m_accept_start_time( -1 ),
+    m_accept_stop_time( -1 ),
     m_total_delay( 0.0 ),
     m_max_delay( 0.0 ),
-    m_total_mark_delay( 0.0 ),
     m_inject_ack_packet( 0 ),
     m_accept_ack_packet( 0 ),
-    m_total_e2e_ack_delay( 0.0 ),
+    m_retransmission_packet( 0 ),
     m_drop_flit( 0 ),
     m_nondrop_packet( 0 ),
-    m_nondrop_ack_packet( 0 ),
-    m_retransmission_packet( 0 )
+    m_nondrop_ack_packet( 0 )
 {
 }
 
 EsynetNIStatistic::EsynetNIStatistic(const EsynetNIStatistic &t) :
-    m_inject_packet( t.injectPacket() ),
-    m_accept_packet( t.acceptPacket() ),
+    m_injected_packet( t.injectedPacket() ),
+    m_inject_start_time( t.injectStartTime() ),
+    m_inject_stop_time( t.injectStopTime() ),
+    m_accepted_packet( t.acceptedPacket() ),
     m_accept_start_time( t.acceptStartTime() ),
     m_accept_stop_time( t.acceptStopTime() ),
-    m_accept_mark_packet( t.acceptMarkPacket() ),
     m_total_delay( t.totalDelay() ),
     m_max_delay( t.maxDelay() ),
-    m_total_mark_delay( t.totalMarkDelay() ),
     m_inject_ack_packet( t.injectAckPacket() ),
     m_accept_ack_packet( t.acceptAckPacket() ),
-    m_total_e2e_ack_delay( t.totalE2EAckDelay() ),
+    m_retransmission_packet( t.retransmissionPacket() ),
     m_drop_flit( t.dropFlit() ),
     m_nondrop_packet( t.nonDropPacket() ),
-    m_nondrop_ack_packet( t.nonDropAckPacket() ),
-    m_retransmission_packet( t.retransmissionPacket() )
+    m_nondrop_ack_packet( t.nonDropAckPacket() )
 {
 }
 
 void EsynetNIStatistic::add(const EsynetNIStatistic& t)
 {
-    m_inject_packet += t.injectPacket();
-    m_accept_packet += t.acceptPacket();
+    m_injected_packet += t.injectedPacket();
+	if ( t.injectStartTime() < m_inject_start_time && t.injectStartTime() > 0 )
+	{
+		m_inject_start_time = t.injectStartTime();
+	}
+	if ( t.injectStopTime() > m_inject_stop_time )
+	{
+		m_inject_stop_time = t.injectStopTime();
+	}
+	
+    m_accepted_packet += t.acceptedPacket();
 	if ( t.acceptStartTime() < m_accept_start_time && t.acceptStartTime() > 0 )
 	{
 		m_accept_start_time = t.acceptStartTime();
@@ -94,26 +101,37 @@ void EsynetNIStatistic::add(const EsynetNIStatistic& t)
 	{
 		m_accept_stop_time = t.acceptStopTime();
 	}
-    m_accept_mark_packet += t.acceptMarkPacket();
+	
     m_total_delay += t.totalDelay();
 	if ( t.maxDelay() > m_max_delay )
 	{
 		m_max_delay = t.maxDelay();
 	}
-    m_total_mark_delay += t.totalMarkDelay();
-    m_inject_ack_packet += t.injectAckPacket();
+
+	m_inject_ack_packet += t.injectAckPacket();
     m_accept_ack_packet += t.acceptAckPacket();
-    m_total_e2e_ack_delay += t.totalE2EAckDelay();
-    m_drop_flit += t.dropFlit();
+    m_retransmission_packet += t.retransmissionPacket();
+
+	m_drop_flit += t.dropFlit();
     m_nondrop_packet += t.nonDropPacket();
     m_nondrop_ack_packet += t.nonDropAckPacket();
-    m_retransmission_packet += t.retransmissionPacket();
 }
 
 EsynetFoundationStatistic::EsynetFoundationStatistic() :
     m_injected_packet( 0 ),
-    m_inject_start_time( 0.0 ),
-    m_inject_stop_time( 0.0 ),
+    m_inject_start_time( -1 ),
+    m_inject_stop_time( -1 ),
+    
+    m_accepted_packet( 0 ),
+    m_accept_start_time( -1 ),
+    m_accept_stop_time( -1 ),
+    
+    m_e2e_total_delay( 0.0 ),
+    m_e2e_max_delay( 0.0 ),
+    
+    m_accept_mark_packet( 0 ),
+    m_total_mark_delay( 0.0 ),
+
     m_throughput_measure_start_packet( 0 ),
     m_throughput_measure_stop_packet( 0 ),
     m_throughput_measure_start_time( 0.0 ),
@@ -122,9 +140,20 @@ EsynetFoundationStatistic::EsynetFoundationStatistic() :
 }
 
 EsynetFoundationStatistic::EsynetFoundationStatistic(const EsynetFoundationStatistic &t) :
-    m_injected_packet( t.injectPacket() ),
+    m_injected_packet( t.injectedPacket() ),
     m_inject_start_time( t.injectStartTime() ),
     m_inject_stop_time( t.injectStopTime() ),
+    
+    m_accepted_packet( t.acceptedPacket() ),
+    m_accept_start_time( t.acceptStartTime() ),
+    m_accept_stop_time( t.acceptStopTime() ),
+    
+    m_e2e_total_delay( t.totalE2EDelay() ),
+    m_e2e_max_delay( t.maxE2EDelay() ),
+
+    m_accept_mark_packet( t.acceptMarkPacket() ),
+    m_total_mark_delay( t.totalMarkDelay() ),
+    
     m_throughput_measure_start_packet( t.throughputMeasureStartPacket() ),
     m_throughput_measure_stop_packet( t.throughputMeasureStopPacket() ),
     m_throughput_measure_start_time( t.throughputMeasureStartTime() ),

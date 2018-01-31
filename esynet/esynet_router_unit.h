@@ -87,12 +87,6 @@ private:
 	vector< EsynetECCInterDecoder > m_ecc_units;
 
 	/* Spare lines */
-	/* spare lines enable */
-	bool m_spare_line_enable;
-	/* spare lines width */
-	long m_spare_line_group_width;
-	/* spare lines number */
-	long m_spare_line_number;
 	/* spare line pattern */
 	vector< DataType > m_spare_line_pattern;
 
@@ -107,6 +101,7 @@ private:
 	long m_bist_interval_timer;
 	/* Build-in Self-Test duration timer */
 	long m_bist_duration_timer;
+	vector< long > m_port_bist_timer;
 	/* Build-in Self-Test state */
 	BISTRouterState m_bist_router_state;
 	vector< BISTPortState > m_bist_port_state;

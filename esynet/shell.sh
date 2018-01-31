@@ -141,10 +141,18 @@
 #../qtparallel/qtparallel -pc_num_avail 2 -arg_file_path parafile.txt -out_file_path ../example/nonblocking_one_fault.xls
 #rm parafile.text
 
-echo ./esynet >> parafile.txt
-echo ./esynet >> parafile.txt
-echo ./esynet >> parafile.txt
-echo ./esynet >> parafile.txt
-../qtparallel/qtparallel -pc_num_avail 2 -arg_file_path parafile.txt -out_file_path ../example/nonblocking_one_fault.xls -log_enable
-rm parafile.txt
+networkcfg="./esynet -router_num 64 -array_size 8 8 -phy_number 5 -vc_number 2 -in_buffer_size 12 -out_buffer_size 12 -data_path_width 32 -link_length 1000 -routing_alg DyXY -random_seed 1 -simulation_period 1 -ni_buffer_size 1 -ni_read_delay 0 -sim_length 10000 -traffic_rule Uniform -traffic_pir 0.01 -packet_size 5 -injected_packet 3000 -fault_inject_enable -fault_inject_file_name ../example/faultinject -fault_inject_inline 2 -1 -1 -1 -1 0 1 e 0.99 0.01 0.9 0.1 e"
+ecccfg="-ecc_enable -ecc_name HM128 -ecc_strategy H2H"
+rtcfg="-e2e_retrans_enable -e2e_retrans_timer_max 1000"
+swcfg="-sw_enable -sw_capacity 16 2"
+ftrcfg="-routing_alg HiPFaR"
+#$networkcfg
+#$networkcfg $ecccfg
+$networkcfg $ecccfg $rtcfg
+#$networkcfg $ecccfg $ftrcfg
+#$networkcfg $ecccfg $ftrcfg $rtcfg
+#$networkcfg $ecccfg $swcfg
+#$networkcfg $ecccfg $swcfg $rtcfg
+#$networkcfg $ecccfg $swcfg $ftrcfg
+#$networkcfg $ecccfg $swcfg $ftrcfg $rtcfg
 

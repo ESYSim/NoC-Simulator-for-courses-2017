@@ -29,6 +29,7 @@ SIM_SRCS = \
 	esynet_mess_event.cc \
 	esynet_mess_queue.cc \
 	esynet_ni_unit.cc \
+	esynet_packet_generator.cc \
 	esynet_port_unit.cc \
 	esynet_random_unit.cc \
 	esynet_arbiter.cc \
@@ -56,6 +57,7 @@ SIM_OBJS = \
 	esynet_mess_event.$(OEXT) \
 	esynet_mess_queue.$(OEXT) \
 	esynet_ni_unit.$(OEXT) \
+	esynet_packet_generator.$(OEXT) \
 	esynet_port_unit.$(OEXT) \
 	esynet_random_unit.$(OEXT) \
 	esynet_arbiter.$(OEXT) \
@@ -117,8 +119,9 @@ esynet_main.$(OEXT): esynet_main.cc
 esynet_mess_event.$(OEXT): esynet_mess_event.cc esynet_mess_event.h 
 esynet_mess_queue.$(OEXT): esynet_mess_queue.cc esynet_mess_queue.h 
 esynet_pe_unit.$(OEXT): esynet_pe_unit.cc esynet_pe_unit.h 
-esynet_path.$(OEXT): esynet_path.cc
 esynet_port_unit.$(OEXT): esynet_port_unit.cc esynet_port_unit.h 
+esynet_path.$(OEXT): esynet_path.cc
+esynet_packet_generator.$(OEXT): esynet_packet_generator.cc esynet_packet_generator.h 
 esynet_random_unit.$(OEXT): esynet_random_unit.cc esynet_random_unit.h
 esynet_arbiter.$(OEXT): esynet_arbiter.cc esynet_arbiter.h
 esynet_router_fault.$(OEXT): esynet_router_fault.cc esynet_router_unit.h

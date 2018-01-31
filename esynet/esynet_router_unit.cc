@@ -101,14 +101,12 @@ EsynetRouter::EsynetRouter() :
 	m_ecc_units(),
 	m_neighbor_faulty(),
 	m_corner_faulty(),
-	m_spare_line_enable(),
-	m_spare_line_group_width(),
-	m_spare_line_number(),
 	m_spare_line_pattern(),
 	m_interleaving_enable(),
 	m_interleaving_group_width(),
 	m_bist_interval_timer(),
 	m_bist_duration_timer(),
+	m_port_bist_timer(),
 	m_bist_router_state(),
 	m_bist_port_state(),
 	m_bist_neighbor_empty_ack(),
@@ -157,15 +155,13 @@ EsynetRouter::EsynetRouter(EsyNetworkCfg * network_cfg, long router_id,
 	m_ecc_units(),
 	m_neighbor_faulty( network_cfg->router( router_id ).portNum(), false ),
 	m_corner_faulty( network_cfg->router( router_id ).portNum(), false ),
-	m_spare_line_enable( false ),
-	m_spare_line_group_width( 8 ),
-	m_spare_line_number( 1 ),
 	m_spare_line_pattern( network_cfg->router( router_id ).portNum(), 
 						DataType( network_cfg->flitSize( ATOM_WIDTH_ ) ) ),
 	m_interleaving_enable( false ),
 	m_interleaving_group_width( 8 ),
 	m_bist_interval_timer(),
 	m_bist_duration_timer(),
+	m_port_bist_timer( network_cfg->router( router_id ).portNum(), -1 ), 
 	m_bist_router_state( esynet::BIST_ROUTER_NORMAL ),
 	m_bist_port_state( 
 		network_cfg->router( router_id ).portNum(), esynet::BIST_PORT_NORMAL ),
@@ -466,7 +462,7 @@ void EsynetRouter::routingDecision()
 				/* call routing algorithm to insert routing requirement and
 					* insert ET_ROUTING event */
 				
-				if ( m_argu_cfg->faultInjectEnable() )
+/*				if ( m_argu_cfg->faultInjectEnable() )
 				{
 					long sor_faultbit = flit_t.faultPattern()[0];
 					long des_faultbit = flit_t.faultPattern()[0];
@@ -494,7 +490,7 @@ void EsynetRouter::routingDecision()
 					{
 						flit_t.setDrop();
 					}
-				}
+				}*/
 				
 				(this->*m_curr_algorithm)( des_t, sor_t, pc_l, vc_l );
 				if ( m_input_port[ pc_l ][ vc_l ].routing().size() > 0 )
@@ -881,14 +877,14 @@ void EsynetRouter::routerSimPipeline()
 	{
 		/* stage 5 flit traversal */
 		flitTraversal();
-		/* stage 1, routing decision */
-		routingDecision();
-		/* stage 2, vc arbitration */
-		vcArbitration();
-		/* stage 3 swETh arbitration */
-		swArbitration();
 		/* stage 4 flit output buffer */
 		flitOutbuffer();
+		/* stage 3 swETh arbitration */
+		swArbitration();
+		/* stage 2, vc arbitration */
+		vcArbitration();
+		/* stage 1, routing decision */
+		routingDecision();
 	}
 
 	if ( m_argu_cfg->bistEnable() )

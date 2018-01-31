@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Toolsconfiguration>
-    <Tool direction="../esynet" configName="esynet" father="Simulation"/>
-    <Tool direction="../esymap" configName="esymap" father="Simulation"/>
-    <Tool direction="../esymap" configName="tgffsocket" father="Configuration"/>
-    <Tool direction="../esyarch" configName="esyarch" father="Simulation"/>
-    <Tool direction="../traceanalyse" configName="traceanalyse" father="Analysis"/>
-    <Tool direction="../recordanalyse" configName="recordanalyse" father="Analysis"/>
-    <Tool direction="../esynetrtl" configName="nocgen" father="Configuration"/>
-    <Tool direction="../esynetrtl" configName="faultInject" father="Configuration"/>
-    <Tool direction="../esynetrtl" configName="behaviorSim" father="Simulation"/>
-    <Tool direction="../esynetrtl" configName="gateSimulator" father="Simulation"/>
+    <Tool direction="../esynet" father="Simulation" configName="esynet"/>
+    <Tool direction="../esymap" father="Simulation" configName="esymap"/>
+    <Tool direction="../esymap" father="Configuration" configName="tgffsocket"/>
+    <Tool direction="../esyarch" father="Simulation" configName="esyarch"/>
+    <Tool direction="../traceanalyse" father="Analysis" configName="traceanalyse"/>
+    <Tool direction="../recordanalyse" father="Analysis" configName="recordanalyse"/>
+    <Tool direction="../esynetrtl" father="Configuration" configName="nocgenerator"/>
+    <Tool direction="../esynetrtl" father="Simulation" configName="behaviorSim"/>
+    <Tool direction="../esynetrtl" father="Simulation" configName="gateSimulator"/>
 </Toolsconfiguration>

@@ -95,24 +95,6 @@ using namespace std;
 *************************************************/
 class EsynetNI : public EsynetSimBaseUnit
 {
-/* Public Types */
-public:
-	/* traffic rule to generate traffic */
-	enum TrafficRule {
-		/* random */
-		TRAFFIC_RANDOM,         
-		/* (x,y) -> (Y-1-y,X-1-x), X,Y is the size of network */
-		TRAFFIC_TRANSPOSE1,     
-		/* (x,y) -> (y,x) */
-		TRAFFIC_TRANSPOSE2,     
-		/* bit reversal */
-		TRAFFIC_BIT_REVERSAL,   
-		/* loop left shift */
-		TRAFFIC_SHUFFLE,        
-		/* swap the MSB and LSB */
-		TRAFFIC_BUTTERFLY       
-	};
-
 /* Properties */
 private:
 	/* General Information */
@@ -123,14 +105,15 @@ private:
 	EsyNetworkCfgRouter * m_router_cfg;
 	EsynetConfig * m_argu_cfg;
 
-	bool m_generate_traffic_enable;
-
 	/* injected flit queue */
 	vector< EsynetFlit > m_inject_queue;
 	/* selected virtual channel */
 	long m_inject_vc;
 	/* credit counter */
 	vector< long > m_vc_counter;
+	
+	/* ejected flit queue */
+	vector< EsynetFlit > m_eject_queue;
 
 	/* ejected flit queue */
 	vector< EsynetMessEvent > m_accept_list;
@@ -164,8 +147,6 @@ public:
 	EsynetNI(EsyNetworkCfg * network_cfg,
 		long id, EsynetConfig * argument_cfg);
 
-	void setGeneratePacketEnable( bool e ) { m_generate_traffic_enable = e; }
-
 	const EsynetNIStatistic & statistic() { return m_statistic; }
 	/* functions run before simulationrouter */
 	void runBeforeRouter();
@@ -175,7 +156,9 @@ public:
 	/* inject packet */
 	void injectPacket(const EsynetFlit& b);
 	/* receive packet */
-	void receivePacket(long vc, const EsynetFlit & b);
+	void receiveFlit(long vc, const EsynetFlit & b);
+	void receivePacketHandler();
+	void receivePacket(const EsynetFlit & b);
 	/* receive credit */
 	void receiveCredit( long vc, long credit ) { m_vc_counter[ vc ] = credit ;}
 	/* flit traversal */
@@ -199,9 +182,6 @@ public:
     
 /* Protected Functions */
 protected:
-	/* generate packet */
-	void generatePacket();
-
 	/* E2E Retransmission Functions */
 	/* E2E retransmission timer and functions driven by timer overflow */
 	void e2eRetransmissionTimerOverflow();

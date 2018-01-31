@@ -41,15 +41,15 @@ EsynetECCBufferUnit::EsynetECCBufferUnit(ECCMethod ecc_name, long data_width,
         m_ecc_correct_capacity = 1; 
         m_ecc_detect_capacity = 2;
     }
-	else if (ecc_name == ECC_HM2216)
+	else if (ecc_name == ECC_HM2116)
     {
-        m_ecc_word_width = 22; 
+        m_ecc_word_width = 21; 
         m_ecc_correct_capacity = 1; 
         m_ecc_detect_capacity = 2;
     }
-	else if (ecc_name == ECC_HM3932)
+	else if (ecc_name == ECC_HM3832)
     {
-        m_ecc_word_width = 39; 
+        m_ecc_word_width = 38; 
         m_ecc_correct_capacity = 1; 
         m_ecc_detect_capacity = 2;
     }
@@ -62,43 +62,86 @@ EsynetECCBufferUnit::EsynetECCBufferUnit(ECCMethod ecc_name, long data_width,
 
 void EsynetECCBufferUnit::decode(EsynetFlit & flit)
 {
-    DataType fault_pattern = flit.faultPattern();
-    
     long totalbit = m_data_width;
     long totalgroup = totalbit / m_ecc_word_width;
     for (int group = 0; group < totalgroup; group ++)
     {
+		// get the number of faulty bit in this group
         long groupfault = 0;
         for (int gbit = group * m_ecc_word_width; 
             gbit < (group + 1) * m_ecc_word_width; gbit ++)
         {
-            long byteid = gbit / ATOM_WIDTH_;
-            long bitid = gbit % ATOM_WIDTH_;
-            long bitvalue = fault_pattern[byteid] & (0x01ULL << bitid);
+            long bitvalue = flit.faultPatternBit(gbit);
             if (bitvalue > 0)
             {
                 groupfault ++;
-                if (groupfault <= m_ecc_correct_capacity)
-                {
-                    fault_pattern[byteid] = 
-                        fault_pattern[byteid] & (~(0x01ULL << bitid));
-					flit.clearDrop();
-                }
-                else if (groupfault <= m_ecc_detect_capacity)
-                {
-                    flit.setDrop();
-                    //reportFault(phy);
-                }
-                else
-                {
-                    flit.setDrop();
-                }
-            }
-        }
+			}
+		}
+
+		if (groupfault <= m_ecc_correct_capacity)
+		{
+			for (int gbit = group * m_ecc_word_width; 
+				gbit < (group + 1) * m_ecc_word_width; gbit ++)
+			{
+				flit.clearFaultPatternBit(gbit);
+			}
+		}
+		else if (groupfault <= m_ecc_detect_capacity)
+		{
+			flit.setDrop();
+		}
+		else
+		{
+			flit.setDrop();
+		}
     }
 
-    flit.setFaultPattern( fault_pattern );
+	if (flit.faultBitCount() > 0)
+	{
+		flit.setFaulty();
+	}
+	else
+	{
+		flit.clearFaulty();
+	}
 }
+
+long int EsynetECCBufferUnit::dataPathWithECC(ECCMethod name, long int width_without_ecc)
+{
+	long groupwithoutcode = 1;
+	long groupwithcode = 1;
+	if ( name == ECC_HM74 )
+	{
+		groupwithoutcode = 4;
+		groupwithcode = 7;
+	}
+	else if (name == ECC_HM128 )
+	{
+		groupwithoutcode = 8;
+		groupwithcode = 12;
+	}
+	else if (name == ECC_HM2116)
+	{
+		groupwithoutcode = 16;
+		groupwithcode = 21;
+	}
+	else if (name == ECC_HM3832)
+	{
+		groupwithoutcode = 32;
+		groupwithcode = 38;
+	}
+	
+	long group = width_without_ecc / groupwithoutcode;
+	if ( width_without_ecc % groupwithoutcode > 0 )
+	{
+		return ( group + 1) * groupwithcode;
+	}
+	else
+	{
+		return group * groupwithcode;
+	}
+}
+
 
 void EsynetECCEncoder::encoder(long vc, const EsynetFlit& flit)
 {

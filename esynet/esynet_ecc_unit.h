@@ -147,6 +147,8 @@ public:
      */
 	const EsynetFlit & getFlit()
         { m_buf_state = false; return m_ecc_buffer; }
+        
+    static long dataPathWithECC(ECCMethod name, long width);
 };
 
 /**

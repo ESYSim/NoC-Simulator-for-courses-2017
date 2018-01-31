@@ -120,6 +120,7 @@ public:
 	enum FlitFlag {
 		FLIT_ACK  = 0x01,
 		FLIT_DROP = 0x02,
+		FLIT_FAULTY = 0x20,
 		FLIT_MARK = 0x04,
 		FLIT_FTLR_BYPASS = 0x08,
 		FLIT_TESTING = 0x10,
@@ -200,6 +201,10 @@ public:
 	bool drop() const { return ( m_flit_flag & FLIT_DROP ) == FLIT_DROP; }
 	void setDrop() { m_flit_flag = m_flit_flag | FLIT_DROP; }
 	void clearDrop() { m_flit_flag = m_flit_flag & ( ~FLIT_DROP ); }
+	/* functions access to FLIT_FAULTY */
+	bool faulty() const { return ( m_flit_flag & FLIT_FAULTY ) == FLIT_FAULTY; }
+	void setFaulty() { m_flit_flag = m_flit_flag | FLIT_FAULTY; }
+	void clearFaulty() { m_flit_flag = m_flit_flag & ( ~FLIT_FAULTY ); }
 	/* functions access to FLIT_FTLR_BYPASS */
 	bool bypass() const { return ( m_flit_flag & FLIT_FTLR_BYPASS ) == 
 		FLIT_FTLR_BYPASS; }
@@ -216,6 +221,10 @@ public:
 	const DataType & faultPattern() const { return m_fault_pattern; }
 	void setFaultPattern( DataType pattern ) { m_fault_pattern = pattern; }
 	long faultBitCount() const;
+	long faultPatternBit(long bit) const;
+	void setFaultPatternBit(long bit);
+	void clearFaultPatternBit(long bit);
+	bool faultPatternNotEmpty() const;
 	/* functions access to m_bypass_id */
 	const vector< long > & bypassId() const { return m_bypass_id; }
 	void setBypassId( long a, long b ) { m_bypass_id.clear(); 

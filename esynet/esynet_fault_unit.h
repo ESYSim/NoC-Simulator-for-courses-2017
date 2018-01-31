@@ -315,6 +315,7 @@ public:
      * \return  Reference to the specified fault injection point.
      */
 	EsynetFaultStateMachine & faultPoint(long id) { return at(id); }
+	bool isConst() { return m_const_flag;}
     /*!
      * \brief Config the fault injection unit by the best match unit in fault
      * list.
@@ -353,6 +354,9 @@ public:
      * \param pattern  reference to the fault pattern.
      */
     void updateFaultPattern( DataType & pattern );
+	long faultBitCount();
+
+	long stateBitCount(long state);
 
     /*!
      * \brief operator << : print the configuration of this FIP to output

@@ -197,6 +197,34 @@ void EsynetLinkFaultUnit::updateFaultPattern(DataType & pattern)
     }
 }
 
+long int EsynetLinkFaultUnit::faultBitCount()
+{
+	long count = 0;
+    for ( size_t l_point = 0; l_point < size(); l_point ++ )
+    {
+        if ( at( l_point ).currentStateOut() )
+        {
+            count ++;
+        }
+    }
+    return count;
+}
+
+long int EsynetLinkFaultUnit::stateBitCount(long int state)
+{
+	long count = 0;
+    for ( size_t l_point = 0; l_point < size(); l_point ++ )
+    {
+        if ( at( l_point ).currentState() ==  state )
+        {
+            count ++;
+        }
+    }
+    return count;
+}
+
+
+
 ostream& operator<<(ostream& os, const EsynetLinkFaultUnit & sr)
 {
     for ( size_t l_point = 0; l_point < sr.size(); l_point ++ )

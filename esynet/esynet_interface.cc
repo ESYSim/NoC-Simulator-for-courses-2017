@@ -31,12 +31,12 @@ void esynetNetworkInit2( EsyNetworkCfg * network, EsynetConfig * config )
             groupwithoutcode = 8;
             groupwithcode = 12;
         }
-        else if (config->eccName() == ECC_HM2216)
+        else if (config->eccName() == ECC_HM2116)
         {
             groupwithoutcode = 16;
             groupwithcode = 22;
         }
-        else if (config->eccName() == ECC_HM3932)
+        else if (config->eccName() == ECC_HM3832)
         {
             groupwithoutcode = 32;
             groupwithcode = 39;
@@ -125,12 +125,12 @@ void esynetNetworkInit( EsyNetworkCfg * network, EsynetConfig * config )
             groupwithoutcode = 8;
             groupwithcode = 12;
         }
-        else if (config->eccName() == ECC_HM2216)
+        else if (config->eccName() == ECC_HM2116)
         {
             groupwithoutcode = 16;
             groupwithcode = 22;
         }
-        else if (config->eccName() == ECC_HM3932)
+        else if (config->eccName() == ECC_HM3832)
         {
             groupwithoutcode = 32;
             groupwithcode = 39;

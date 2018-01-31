@@ -24,6 +24,7 @@ Copyright (C) 2015, Junshi Wang <>
 #include "esy_linktool.h"
 #include "esynet_ni_unit.h"
 #include "esynet_router_unit.h"
+#include "esynet_packet_generator.h"
 
 /*!
  * \brief Simulation platform.
@@ -59,6 +60,7 @@ protected:
 	vector< EsynetNI > m_ni_list;  /**< \brief Vector of process
         element componenet. */
 
+    EsynetPacketGenerator m_packet_generator; /**< \brief packet generator */
 	EsynetFoundationStatistic m_statistic;  /**< \brief Global statistic unit. */
     MeasureState m_latency_measure_state;  /**< \brief State of measurement of
         average latency. */
@@ -66,6 +68,9 @@ protected:
         of throughput. */
     MeasureState m_injection_state; /**< \brief State of injection and 
         acception if the number of packet is limited. */
+        
+    vector< bool > m_received_id;
+	long m_received_id_offset;
 
 public:
     /*!
@@ -135,7 +140,7 @@ public:
      * recorded for measurement. Record the time of start and end of this
      * measurement.
      */
-    void updateStatistic();
+    void updateStatistic(const vector< EsynetMessEvent > & accepted);
     
     /*!
      * \brief Synchronize the signals between routers and PEs.
@@ -187,6 +192,12 @@ public:
      * \sa #eventHandler()
      */
 	void receiveCreditMessage(const EsynetMessEvent & mesg);
+    /*!
+     * \brief Receive NI read event handler.
+     * \param mesg  including the ni read to receive.
+     * \sa #eventHandler()
+     */
+	void receiveNiReadMessage(const EsynetMessEvent & mesg);
     ///@}
 
     /*!

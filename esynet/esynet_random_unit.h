@@ -45,12 +45,6 @@ using namespace std;
 class EsynetSRGen
 {
 protected:
-    long m_seed;  /**< \brief Seed to generate random number.
-     *
-     * Default value is 1.
-     *
-     * Access functions: #setSeed()
-     */
     long m_idum; /**< \brief Last value of state machine. */
     static double PI; /**< \brief Static value of \f$\pi\f$ */
 	static EsynetSRGen * mp_global_pointer; /**< \brief Global pointer to this entity.

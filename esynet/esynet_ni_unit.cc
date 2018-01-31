@@ -20,14 +20,6 @@ Copyright (C) 2015, Junshi Wang <>
 
 #include "esynet_ni_unit.h"
 
-/* Bit Operation Functions */
-/* Set the w-th bit in integer x as v */
-void setBit( int &x, int w, int v );
-/* Get the value of the w-th bit in integer x */
-int getBit( int x, int w );
-/* Return the log2(x) and round up to a integer */
-double log2Ceil( double x );
-
 /*************************************************
   Function: 
     EsynetNI::EsynetNI(long id, long phy_port, void * router)
@@ -47,8 +39,6 @@ EsynetNI::EsynetNI( EsyNetworkCfg * network_cfg,
 	m_network_cfg( network_cfg ),
 	m_router_cfg( &( network_cfg->router( id ) ) ),
 	m_argu_cfg( argument_cfg ),
-	m_generate_traffic_enable( !argument_cfg->trafficInjectDisable() &&
-		!argument_cfg->inputTraceEnable() ),
 	m_inject_vc( 0 ),
 	m_vc_counter( network_cfg->router( id ).maxVcNum(), 
 		network_cfg->router( id ).maxInputBuffer() ),
@@ -73,183 +63,6 @@ EsynetNI::EsynetNI( EsyNetworkCfg * network_cfg,
 		m_init_data[ l_byte ] = 
 			EsynetSRGenFlatUnsignedLongLong(0, MAX_64_);
 	} /* for ( long l_byte = 0; l_byte < m_flit_size; l_byte ++ ) */    
-}
-
-/*************************************************
-  Function :
-    void EsynetNI::setBit(int &x, int w, int v)
-  Description :
-    Set the w-th bit in integer x as v.
-  Called By:
-    void EsynetNI::trafficBitReversal(BenchmarkItem * p)
-    void EsynetNI::trafficShuffle(BenchmarkItem * p)
-    void EsynetNI::trafficButterfly(BenchmarkItem * p)
-  Input:
-    int& x  integer to operate
-    int  w  the position of bit to operate
-    int  v  the value of bit
-*************************************************/
-void setBit( int &x, int w, int v )
-{
-	/* bit mask of w-th bit in integer */
-	int mask = 1 << w;
-
-	/* if the v is 1, set w-th bit 1. */
-	if ( v == 1 )
-	{
-		x = x | mask;
-	} /* if ( v == 1 ) */
-	/* if the v is 0, set w-th bit 0. */
-	else if ( v == 0 )
-	{
-		x = x & ~mask;
-	} /* else if ( v == 0 ) */
-	/* if the v is neither 0 nor 1, call assertion report. */
-}
-
-/*************************************************
-  Function :
-    int EsynetNI::getBit(int x, int w)
-  Description :
-    Get the value of the w-th bit in integer x.
-  Called By :
-    void EsynetNI::trafficBitReversal(BenchmarkItem * p)
-    void EsynetNI::trafficShuffle(BenchmarkItem * p)
-    void EsynetNI::trafficButterfly(BenchmarkItem * p)
-  Input :
-    int  x  integer to operate
-    int  w  the position of bit to operate
-  Return :
-    int  v  the value of the bit
-*************************************************/
-int getBit( int x, int w )
-{
-	return ( x >> w ) & 1;
-}
-
-/*************************************************
-  Function :
-    double EsynetNI::log2Ceil(double x)
-  Description :
-    Return the log2(x) and round up to a integer.
-  Called By :
-    void EsynetNI::trafficBitReversal(BenchmarkItem * p)
-    void EsynetNI::trafficShuffle(BenchmarkItem * p)
-    void EsynetNI::trafficButterfly(BenchmarkItem * p)
-  Input :
-    double  x  the digital to log
-  Return
-    double  log2(x) and round up
-*************************************************/
-double log2Ceil( double x )
-{
-	return ceil( log( x ) / log( 2.0 ) );
-}
-
-/*************************************************
-  Function :
-    void EsynetNI::generatePacket()
-  Description :
-    Generate packets.
-  Calls :
-    double SRGen::flatDouble( double low, double high )
-    const BenchmarkItem & EsynetNI::trafficRandom()
-    const BenchmarkItem & EsynetNI::trafficTranspose1()
-    const BenchmarkItem & EsynetNI::trafficTranspose2()
-    const BenchmarkItem & EsynetNI::trafficBitReversal()
-    const BenchmarkItem & EsynetNI::trafficShuffle()
-    const BenchmarkItem & EsynetNI::trafficButterfly()
-  Called By:
-    void SimRouter::runBeforeRouter()
-*************************************************/
-void EsynetNI::generatePacket()
-{
-	/* detemine if there is a new packet, if the random number is lower then 
-	 * pir, shot will be TRUE;
-	 * Thus, the packet inject rate ranges from 0 to 1 packet/cycle/router. */
-	bool shot = (EsynetSRGenFlatDouble(0, 1) < m_argu_cfg->trafficPir() );
-	/* if there is a new packet, determine each field for the new packet. */
-	if ( shot )
-	{
-		/* size of source id (bit) */
-		int nbits = (int)log2Ceil( m_network_cfg->routerCount() );
-		/* coordinate of source id. */
-		vector< long > src_cord = m_network_cfg->seq2Coord( m_id );
-		
-		/* generate new packet */
-		int dst = m_id;
-		switch ( (TrafficRule)m_argu_cfg->trafficRule() )
-		{
-		/* Determine the destination in new packet according to Random rule */
-		case TRAFFIC_RANDOM : 
-			dst = EsynetSRGenFlatLong(0, m_network_cfg->routerCount());
-			break;
-		/* Determine the destination in new packet according to Transpose1 rule
-		 * (x,y) -> (Y-1-y,X-1-x), X,Y is the size of network */
-		case TRAFFIC_TRANSPOSE1: 
-			{
-				vector< long > dst_cord( 2, 0 );
-				dst_cord[ EsyNetworkCfg::AX_X ] = 
-					m_network_cfg->size( EsyNetworkCfg::AX_Y ) - 1 
-						- src_cord[ EsyNetworkCfg::AX_Y ];
-				dst_cord[ EsyNetworkCfg::AX_Y ] = 
-					m_network_cfg->size( EsyNetworkCfg::AX_X ) - 1 
-						- src_cord[ EsyNetworkCfg::AX_X ];
-				dst = m_network_cfg->coord2Seq( dst_cord );
-			}
-			break;
-		/* Determine the destination in new packet according to Transpose2 rule
-		 * (x,y) -> (y,x) */
-		case TRAFFIC_TRANSPOSE2: 
-			{
-				vector< long > dst_cord( 2, 0 );;
-				dst_cord[ EsyNetworkCfg::AX_X ] = 
-					src_cord[ EsyNetworkCfg::AX_Y ];
-				dst_cord[ EsyNetworkCfg::AX_Y ] = 
-					src_cord[ EsyNetworkCfg::AX_X ];
-				dst = m_network_cfg->coord2Seq( dst_cord );
-			}
-			break;
-		/* Determine the destination in new packet according to bit reversal 
-		 * rule */
-		case TRAFFIC_BIT_REVERSAL: 
-			{
-				for ( int l_bit = 0; l_bit < nbits; l_bit ++ )
-				{
-					setBit( dst, l_bit, getBit( m_id, nbits - l_bit - 1 ) );
-				}
-			}
-			break;
-		/* Determine the destination in new packet according to suffle rule
-		 * loop left shift */
-		case TRAFFIC_SHUFFLE: 
-			{
-				for ( int l_bit = 0; l_bit < nbits - 1; l_bit ++ )
-				{
-					setBit( dst, l_bit + 1, getBit( m_id, l_bit ) );
-				} 
-				setBit( dst, 0, getBit( m_id, nbits - 1 ) );
-			}
-			break;
-		/* Determine the destination in new packet according to butterfly rule
-		 * swap the MSB and LSB */
-		case TRAFFIC_BUTTERFLY: 
-			{
-				for ( int l_bit = 1; l_bit < nbits - 1; l_bit ++ )
-				{
-					setBit(dst, l_bit, getBit(m_id, l_bit) );
-				}
-				setBit( dst, 0, getBit( m_id, nbits - 1 ) );
-				setBit( dst, nbits - 1, getBit( m_id, 0 ) );
-			}
-			break;
-		/* if unknown traffic, call asseration */
-		default: break;
-		} /* switch ( m_traffic ) */
-		/* insert new packets */
-		addEvent(EsynetMessEvent::generateEvgMessage(m_current_time,
-			m_id, dst,  m_argu_cfg->packetSize(), -1, m_current_time ) );
-	} /* if ( shot ) */
 }
 
 /*************************************************
@@ -286,15 +99,12 @@ void EsynetNI::e2eRetransmissionTimerOverflow()
 			if ( m_retransmission_buffer[ l_dest ].size() > 0 )
 #endif
 			{
+				EsynetFlit flit_t = m_retransmission_buffer[ l_dest ][ 0 ];
 				/* insert the first packet into message queue */
-				addEvent(EsynetMessEvent::generateEvgMessage(m_current_time,
-					m_retransmission_buffer[ l_dest ][ 0 ].sorAddr(),
-					m_retransmission_buffer[ l_dest ][ 0 ].desAddr(),
-					m_argu_cfg->packetSize(), -1,
-					m_retransmission_buffer[ l_dest ][ 0 ].startTime() ) );
+				injectPacket( flit_t );
 				/* remove the first packet from queue */
-				m_retransmission_buffer[ l_dest ].erase(
-					m_retransmission_buffer[ l_dest ].begin() );
+//				m_retransmission_buffer[ l_dest ].erase(
+//					m_retransmission_buffer[ l_dest ].begin() );
 				/* increase retransmission counter */
 				m_statistic.incRetransmissionPacket();
 			} 
@@ -394,7 +204,7 @@ void EsynetNI::e2eRetransmissionComfirm(const EsynetFlit & b)
   Return:
     bool  if a packet is received successful, return TRUE
 *************************************************/
-void EsynetNI::receivePacket(long vc, const EsynetFlit & flit)
+void EsynetNI::receiveFlit(long vc, const EsynetFlit & flit)
 {
 	EsynetFlit flit_t = flit;
 	if ( m_ecc_decoder.eccEnable() )
@@ -410,56 +220,80 @@ void EsynetNI::receivePacket(long vc, const EsynetFlit & flit)
 		}
 	}
 
+	if (m_argu_cfg->niReadDelay() > 0)
+	{
+		m_eject_queue.push_back(flit_t);
+		addEvent(EsynetMessEvent::generateCreditMessage(
+			m_current_time + CREDIT_DELAY_, m_id + m_network_cfg->routerCount(), 
+			0, 0, m_id, 0, vc, m_argu_cfg->niBufferSize() - m_eject_queue.size()));
+		if (flit.flitType() == EsynetFlit::FLIT_TAIL)
+		{
+			addEvent(EsynetMessEvent::generateNIReadMessage(
+				m_current_time + m_argu_cfg->niReadDelay(), m_id));
+		}
+	}
+	else
+	{
+		addEvent(EsynetMessEvent::generateCreditMessage(
+			m_current_time + CREDIT_DELAY_, m_id + m_network_cfg->routerCount(), 
+			0, 0, m_id, 0, vc, 10));
+		receivePacket(flit_t);
+	}
+}
+
+void EsynetNI::receivePacketHandler()
+{
+	while (m_eject_queue.size() > 0)
+	{
+		EsynetFlit flit_t = m_eject_queue[0];
+		receivePacket(flit_t);
+		m_eject_queue.erase(m_eject_queue.begin());
+		if (flit_t.flitType() == EsynetFlit::FLIT_TAIL)
+		{
+			break;
+		}
+	}
 	addEvent(EsynetMessEvent::generateCreditMessage(
 		m_current_time + CREDIT_DELAY_, m_id + m_network_cfg->routerCount(), 
-		0, 0, m_id, 0, vc, 10 ) );
-	if (flit_t.desAddr() != m_id) 
+		0, 0, m_id, 0, 0, m_argu_cfg->niBufferSize() - m_eject_queue.size()));
+}
+
+void EsynetNI::receivePacket(const EsynetFlit & flit)
+{
+	if (flit.desAddr() != m_id) 
 	{
 		return;
 	}
     /* skip testing packets, return credit direcly */
-	if ( flit.testFlit() )
+	if (flit.testFlit() )
 	{
 		return;
 	}
 
-	if (flit_t.flitType() == EsynetFlit::FLIT_TAIL || flit_t.flitSize() == 1)
+	if (flit.flitType() == EsynetFlit::FLIT_TAIL || flit.flitSize() == 1)
 	{
-		m_statistic.incAcceptPacket();
-		if ( m_statistic.acceptStartTime() < 1e-5 )
-		{
-			m_statistic.setAcceptStartTime( m_current_time );
-		}
-		m_statistic.setAcceptStopTime( m_current_time );
-		m_statistic.incTotalDelay( m_current_time - flit_t.startTime() );
-		m_statistic.updateMaxDelay( m_current_time - flit_t.startTime() );
-		if ( flit_t.marked() )
-		{
-			m_statistic.incAcceptMarkPacket();
-			m_statistic.incTotalMarkDelay( 
-				m_current_time - flit_t.startTime() );
-		}
+		m_statistic.incAcceptPacket(m_current_time, m_current_time - flit.startTime());
 	}
-	if ( flit_t.drop() )
+	if ( flit.drop() )
 	{
 		m_statistic.incDropFlit();
 	}
 	/* inject the new packet into retransmisson buffer */
 	/* if flit is ACK */
-	if ( flit_t.ack() )
+	if ( flit.ack() )
 	{
 		/* receive ack packet */
 		m_statistic.incAcceptAckPacket();
 		/* ack flit is ok */
-		if ( flit_t.drop() == false )
+		if ( flit.drop() == false )
 		{
 			m_statistic.incNonDropAckPacket();
-			m_statistic.incTotalE2EAckDelay( 
-				m_current_time - flit_t.e2eStartTime() );
+//			m_statistic.incTotalE2EDelay( 
+//				m_current_time - flit.e2eStartTime() );
 			/* confirm packet in retransmission buffer */
 			if ( m_argu_cfg->e2eRetransEnable() )
 			{
-				e2eRetransmissionComfirm( flit_t );
+				e2eRetransmissionComfirm( flit );
 			} /* if ( m_retransmission ) */
 		} /* if ( b.drop() == false ) */
 	}
@@ -468,45 +302,43 @@ void EsynetNI::receivePacket(long vc, const EsynetFlit & flit)
 	{
 		/* head flit */
 		/* if the flit is ok, it will register into receive buffer */
-		if (flit_t.flitType() == EsynetFlit::FLIT_HEAD && 
-			flit_t.drop() == false)
+		if (flit.flitType() == EsynetFlit::FLIT_HEAD && 
+			flit.drop() == false)
 		{
 			/* if the packet only contain one flit, send ack directly */
-			if ( flit_t.flitSize() == 1 )
+			if ( flit.flitSize() == 1 )
 			{
 				/* generate ack packet */
 				if ( m_argu_cfg->e2eAckEnable() )
 				{
-					addEvent(EsynetMessEvent::generateEvgMessage(
-						m_current_time,
-						flit_t.desAddr(), flit_t.sorAddr(), 1, -1, 
-						flit_t.startTime(), EsynetFlit::FLIT_ACK, 
-						flit_t.flitId()));
+					injectPacket(EsynetFlit(
+						flit.flitId(), 1, EsynetFlit::FLIT_HEAD, 
+						flit.desAddr(), flit.sorAddr(), 
+						flit.startTime(), flit.e2eStartTime(), flit.data(), 
+						flit.flitFlag() | EsynetFlit::FLIT_ACK, flit.flitId()));
 					m_statistic.incInjectAckPacket();
 				} /* if ( m_ack_packet ) */
 				
 				m_statistic.incNonDropPacket();
 
 				addEvent(EsynetMessEvent(m_current_time, ET_PACKET_ACCEPT,
-					flit_t.sorAddr(), -1, -1, flit_t.desAddr(), -1, -1, 
-					flit_t ) );
-#ifdef ESYNETINTERFACE
+					flit.sorAddr(), -1, -1, flit.desAddr(), -1, -1, 
+					flit ) );
 				m_accept_list.push_back( 
 					EsynetMessEvent(m_current_time, ET_PACKET_ACCEPT,
-					flit_t.sorAddr(), -1, -1, flit_t.desAddr(), -1, -1, 
-					flit_t )
+					flit.sorAddr(), -1, -1, flit.desAddr(), -1, -1, 
+					flit )
 				);
-#endif
 				/* receive a packet successfully */
 			} /* if ( b.flitSize() == 1 ) */
 			else
 			{
-				m_retransmission_receive_buffer.push_back( flit_t );
+				m_retransmission_receive_buffer.push_back( flit );
 			} /* else ( b.flitSize() == 1 ) */
 		} /* if (b.type() == EsynetFlit::FLIT_HEADER_) */
 		/* body flit */
-		else if (flit_t.flitType() == EsynetFlit::FLIT_BODY &&
-			flit_t.drop() == true )
+		else if (flit.flitType() == EsynetFlit::FLIT_BODY &&
+			flit.drop() == true )
 		{
 			/* find the packet in buffer, and erase it away */
 			for ( size_t l_unit = 0;
@@ -514,7 +346,7 @@ void EsynetNI::receivePacket(long vc, const EsynetFlit & flit)
 				l_unit ++ )
 			{
 				if ( m_retransmission_receive_buffer[ l_unit ].flitId() ==
-					flit_t.flitId() )
+					flit.flitId() )
 				{
 					m_retransmission_receive_buffer.erase(
 						m_retransmission_receive_buffer.begin() + 
@@ -523,15 +355,14 @@ void EsynetNI::receivePacket(long vc, const EsynetFlit & flit)
 			} /* for ( size_t i = 0; */
 		}
 		/* tail flit */
-		else if (flit_t.flitType() == EsynetFlit::FLIT_TAIL &&
-			flit_t.drop() == false )
+		else if (flit.flitType() == EsynetFlit::FLIT_TAIL)
 		{
 			/* find the packet in buffer */
 			for ( size_t l_unit = 0;
 				l_unit < m_retransmission_receive_buffer.size(); l_unit ++ )
 			{
 				if ( m_retransmission_receive_buffer[ l_unit ].flitId() ==
-					flit_t.flitId() )
+					flit.flitId() )
 				{
 					/* the packet is i-th item, so the head and body flit is    
 						* ok! */
@@ -539,31 +370,28 @@ void EsynetNI::receivePacket(long vc, const EsynetFlit & flit)
 					m_retransmission_receive_buffer.erase(
 						m_retransmission_receive_buffer.begin() + l_unit);
 								/* if the tail flit is ok, send ack back */
-					if (flit_t.drop() == false)
+					if (flit.drop() == false)
 					{
 						/* generate ack packet */
 						if ( m_argu_cfg->e2eAckEnable() )
 						{
-							addEvent(EsynetMessEvent::generateEvgMessage(
-								m_current_time, flit_t.desAddr(), 
-								flit_t.sorAddr(), 
-								1, -1, flit_t.startTime(), EsynetFlit::FLIT_ACK,
-								flit_t.flitId() ) );
+							injectPacket(EsynetFlit(
+								flit.flitId(), 1, EsynetFlit::FLIT_HEAD, 
+								flit.desAddr(), flit.sorAddr(), 
+								flit.startTime(), flit.e2eStartTime(), flit.data(), 
+								flit.flitFlag() | EsynetFlit::FLIT_ACK, flit.flitId()));
 							m_statistic.incInjectAckPacket();
 						} /* if ( m_ack_packet ) */
-
 						m_statistic.incNonDropPacket();
 
 						addEvent(EsynetMessEvent(
 							m_current_time, ET_PACKET_ACCEPT,
-							flit_t.sorAddr(), -1, -1, flit_t.desAddr(), -1, -1, 
-							flit_t ) );
-#ifdef ESYNETINTERFACE
+							flit.sorAddr(), -1, -1, flit.desAddr(), -1, -1, 
+							flit ) );
 						m_accept_list.push_back( EsynetMessEvent(
 							m_current_time, ET_PACKET_ACCEPT,
-							flit_t.sorAddr(), -1, -1, flit_t.desAddr(), -1, -1, 
-							flit_t ) );
-#endif
+							flit.sorAddr(), -1, -1, flit.desAddr(), -1, -1, 
+							flit ) );
 					} /* if (b.drop() == false) */
 				} /* if ( m_retransmission_receive_buffer[ l_unit ].flitId() */
 			} /* for ( size_t l_unit = 0; */
@@ -584,13 +412,6 @@ void EsynetNI::receivePacket(long vc, const EsynetFlit & flit)
 *************************************************/
 void EsynetNI::runBeforeRouter()
 {
-	/* generate new packet */
-	/* if the function of generating traffic is enabled */
-	if ( m_generate_traffic_enable )
-	{
-		generatePacket();
-	} /* if ( m_generate_traffic ) */
-
 	flitTraversal();
 	/* fault injection function */
 	if ( m_argu_cfg->faultInjectEnable() )
@@ -655,7 +476,7 @@ void EsynetNI::injectPacket(const EsynetFlit& t_flit)
 					EsynetFlit::FLIT_HEAD,
 					t_flit.sorAddr(), t_flit.desAddr(), t_flit.startTime(), 
 					t_flit.e2eStartTime(), flit_data, t_flit.flitFlag(), 
-					t_flit.ack() ) );
+					t_flit.ackPacket() ) );
 		} /* end of  if (l == 0) */
 		/* tail flit */
 		else if( l == ( pac_size - 1) )
@@ -666,7 +487,7 @@ void EsynetNI::injectPacket(const EsynetFlit& t_flit)
 					EsynetFlit::FLIT_TAIL,
 					t_flit.sorAddr(), t_flit.desAddr(), t_flit.startTime(), 
 					t_flit.e2eStartTime(), flit_data, t_flit.flitFlag(), 
-					t_flit.ack() ) );
+					t_flit.ackPacket() ) );
 		} /* end of  else if(l == (size - 1) ) */
 		else 
 		{
@@ -676,12 +497,12 @@ void EsynetNI::injectPacket(const EsynetFlit& t_flit)
 					EsynetFlit::FLIT_BODY,
 					t_flit.sorAddr(), t_flit.desAddr(), t_flit.startTime(), 
 					t_flit.e2eStartTime(), flit_data, t_flit.flitFlag(), 
-					t_flit.ack() ) );
+					t_flit.ackPacket() ) );
 		} /* end of  else */
 	}
 	addEvent(EsynetMessEvent(m_current_time, ET_PACKET_INJECT,
 		t_flit.sorAddr(), -1, -1, t_flit.desAddr(), -1, -1, t_flit ) );
-	m_statistic.incInjectPacket();
+	m_statistic.incInjectPacket(m_current_time);
 
 	/* inject the new packet into retransmisson buffer */
 	if ( m_argu_cfg->e2eRetransEnable() )

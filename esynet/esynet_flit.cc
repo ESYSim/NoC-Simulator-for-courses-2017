@@ -165,7 +165,7 @@ EsynetFlit::EsynetFlit(const EsynetFlit & a) :
         
     m_fault_pattern( a.faultPattern() ),
 
-    m_ack_packet( a.ack() ),
+    m_ack_packet( a.ackPacket() ),
 
     m_bypass_id( a.bypassId() ),
     
@@ -194,3 +194,37 @@ long EsynetFlit::faultBitCount() const
     return faultbit;
 }
 
+long EsynetFlit::faultPatternBit(long bit) const
+{
+	long byteid = bit / ATOM_WIDTH_;
+	long bitid = bit % ATOM_WIDTH_;
+	long bitvalue = m_fault_pattern[byteid] & (0x01ULL << bitid);
+}
+
+void EsynetFlit::setFaultPatternBit(long bit)
+{
+	long byteid = bit / ATOM_WIDTH_;
+	long bitid = bit % ATOM_WIDTH_;
+	m_fault_pattern[byteid] = 
+		m_fault_pattern[byteid] | (0x01ULL << bitid);
+}
+
+void EsynetFlit::clearFaultPatternBit(long bit)
+{
+	long byteid = bit / ATOM_WIDTH_;
+	long bitid = bit % ATOM_WIDTH_;
+	m_fault_pattern[byteid] = 
+		m_fault_pattern[byteid] & (~(0x01ULL << bitid));
+}
+
+bool EsynetFlit::faultPatternNotEmpty() const
+{
+	for (int i = 0; i < m_fault_pattern.size(); i ++)
+	{
+		if (m_fault_pattern[i] > 0)
+		{
+			return true;
+		}
+	}
+	return false;
+}

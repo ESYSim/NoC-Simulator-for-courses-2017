@@ -95,6 +95,8 @@ public:
 		WIRE = 2,
 		/* credit event */
 		CREDIT = 3,
+		/* Ni Read event */
+		NIREAD = 4,
 	};
 /* Properties */
 private:
@@ -163,6 +165,8 @@ public:
 	static EsynetMessEvent generateWireMessage(
 		double time, long src, long src_pc, long src_vc, 
 		long des, long des_pc, long des_vc, const EsynetFlit & flit);
+	static EsynetMessEvent generateNIReadMessage(
+		double time, long ni);
 /* Related Non-Members */
 public:
 	/* print event to stream */

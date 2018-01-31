@@ -26,6 +26,7 @@ Copyright (C) 2015, Junshi Wang <>
 #include "esynet_global.h"
 #include "esynet_mess_queue.h"
 #include "esynet_random_unit.h"
+#include "esynet_ecc_unit.h"
 
 /* global define of double sim_cycle */
 /* used by power cacluation */
@@ -114,39 +115,8 @@ int main( int argc, char *argv[] )
 
 	if ( argu_list.eccEnable() )
 	{
-		long withwithoutecc = network_cfg.dataPathWidth();
-		long groupwithoutcode = 1;
-		long groupwithcode = 1;
-		if ( argu_list.eccName() == ECC_HM74 )
-		{
-			groupwithoutcode = 4;
-			groupwithcode = 7;
-		}
-		else if (argu_list.eccName() == ECC_HM128 )
-		{
-			groupwithoutcode = 8;
-			groupwithcode = 12;
-		}
-		else if (argu_list.eccName() == ECC_HM2216)
-		{
-			groupwithoutcode = 16;
-			groupwithcode = 22;
-		}
-		else if (argu_list.eccName() == ECC_HM3932)
-		{
-			groupwithoutcode = 32;
-			groupwithcode = 39;
-		}
-		
-		long group = withwithoutecc / groupwithoutcode;
-		if ( withwithoutecc % groupwithoutcode > 0 )
-		{
-			network_cfg.setDataPathWidth( ( group + 1) * groupwithcode );
-		}
-		else
-		{
-			network_cfg.setDataPathWidth( group * groupwithcode );
-		}
+		network_cfg.setDataPathWidth( EsynetECCBufferUnit::dataPathWithECC(
+			argu_list.eccName(), network_cfg.dataPathWidth() ) );
 	}
 
 	/* network simulation platform */

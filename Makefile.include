@@ -19,6 +19,7 @@ CS = ;
 X=/
 CFLAGS = $(OFLAGS)
 OUTOPT = -o 
+MV = mv -vf
 
 EXEC = ./
 
@@ -33,6 +34,9 @@ TINYXML_LIB = $(TINYXML_DIR)$(X)*.$(OEXT)
 .SUFFIXES: .$(OEXT) .cc
 
 .cc.o:
+	$(CCPP) -c $(CFLAGS) $< -I$(INTERFACE_DIR) -I$(TINYXML_DIR)
+
+.cpp.o:
 	$(CCPP) -c $(CFLAGS) $< -I$(INTERFACE_DIR) -I$(TINYXML_DIR)
 
 .c.o:

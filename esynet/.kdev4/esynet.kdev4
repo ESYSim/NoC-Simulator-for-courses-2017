@@ -155,3 +155,6 @@ isExecutable=true
 
 [MakeBuilder]
 Number Of Jobs=1
+
+[SourceFileTemplates]
+LastUsedTemplate=/home/eddie/.kde/share/apps/kdevfiletemplates/template_descriptions/cpp_basic.desktop

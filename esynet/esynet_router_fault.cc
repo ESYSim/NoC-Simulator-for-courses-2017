@@ -155,6 +155,14 @@ void EsynetRouter::faultStateUpdate()
 					-1, EsynetFlit()));
             }
         }
+        
+        if (!m_link_fault_units[ phy ].isConst())
+		{
+			if (m_link_fault_units[ phy ].stateBitCount( 0 ) == m_link_fault_units[ phy ].size())
+			{
+				m_port_fault_units[ phy ].setConstantState( false );
+			}
+		}
     }
     
     for ( size_t phy = 0; phy < m_switch_fault_units.size(); phy ++ )
@@ -209,13 +217,20 @@ void EsynetRouter::portFaultInjection(long phy, EsynetFlit & flit_t)
     /* fault pattern local */
     DataType flit_fault_pattern = flit_t.faultPattern();
     m_link_fault_units[ phy ].updateFaultPattern( flit_fault_pattern );
+	if (m_argu_cfg->swEnable())
+	{
+		for (int i = 0; i < flit_fault_pattern.size(); i ++)
+		{
+			flit_fault_pattern[i] &= (~ m_spare_line_pattern[phy][i]);
+		}
+	}
     flit_t.setFaultPattern( flit_fault_pattern );
     
     for ( int i = 0; i < m_network_cfg->flitSize( ATOM_WIDTH_ ); i ++ ) 
     {
         if ( flit_fault_pattern[i] > 0 ) 
         {
-            flit_t.setDrop();
+            flit_t.setFaulty();
             break;
         }
     }
@@ -232,7 +247,7 @@ void EsynetRouter::switchFaultInjection(long phy, EsynetFlit & flit_t)
     {
         if ( flit_fault_pattern[i] > 0 ) 
         {
-            flit_t.setDrop();
+            flit_t.setFaulty();
             break;
         }
     }
@@ -299,61 +314,61 @@ local_fault_pattern[word];
 
 void EsynetRouter::reportFault( long phy )
 {
-#if 0
+	bool temp_detect_enable = true;
+	if (!temp_detect_enable)
+	{
+		return;
+	}
     /* spare line */
-    if (spare_line_enable_)
+    if (m_argu_cfg->swEnable())
     {
         /* clear previous configurtion g_all.tx*/
-        for (int word = 0; word < m_flit_size; word ++)
+        for (int word = 0; word < m_spare_line_pattern[phy].size(); word ++)
         {
-            spare_line_pattern_[phy][word] = 0x0;
+            m_spare_line_pattern[phy][word] = 0x0;
         }
+        m_port_fault_units[phy].setConstantState(false);
         /* configure permanent fault to spare line */
         /* total number of bit and group */
-        long totalbit = m_flit_size * ATOM_WIDTH_;
-        long totalgroup = totalbit / spare_line_group_width_;
+		
+        long totalgroup = m_network_cfg->dataPathWidth() / m_argu_cfg->swCapacity()[0];
         /* loop all group and bit */
         for (int group = 0; group < totalgroup; group ++)
         {
             /* count faults in a group */
             long groupfault = 0;
-            long checkbit = group * spare_line_group_width_;
-            for (int gbit = 0; gbit < spare_line_group_width_; gbit ++)
+            long checkbit = group * m_argu_cfg->swCapacity()[0];
+            for (int gbit = 0; gbit < m_argu_cfg->swCapacity()[0]; gbit ++)
             {
                 long byteid = checkbit / ATOM_WIDTH_;
                 long bitid = checkbit % ATOM_WIDTH_;
                 /* if bitvalue is 1, increase the number of fault */
-                if ( m_link_fault_units[phy].faultPoint( checkbit 
-).currentStateOut() )
+                if ( m_link_fault_units[phy].faultPoint( checkbit ).currentStateOut() )
                 {
-                    /* if all spare line have been used, stop Configuration
-                    * and enable the port fault */
-                    if (groupfault >= spare_line_number_)
-                    {
-//                        FoundationRouter(m_input_neighbor_addr[phy].first).
-//                            setPortFault(m_input_neighbor_addr[phy].second, 
-true);
-//                        cout << "report fault port (" << id_ << "," << phy << 
-")" << endl;
-//                        cout << "fault port (" << in_neighbor_addr_[phy].first 
-<< "," << in_neighbor_addr_[phy].second << ")" << endl;
-                        break;
-                    }
-                    /* change spare line Configuration */
-                    spare_line_pattern_[phy][byteid] = 
-spare_line_pattern_[phy][byteid] |
-                        (0x01ULL << bitid);
-                    groupfault ++;
-                } /* end of  if (bitvalue) */
-                checkbit ++;
-            } /* end of  for (int gbit = 0; gbit < spare_line_group_width_; gbit 
-++) */
+					groupfault ++;
+					/* if all spare line have been used, stop Configuration
+					* and enable the port fault */
+					if (groupfault > m_argu_cfg->swCapacity()[1])
+					{
+						m_port_fault_units[phy].setConstantState(true);
+					}
+					else
+					{
+						m_spare_line_pattern[phy][byteid] = 
+							m_spare_line_pattern[phy][byteid] | (0x01ULL << bitid);
+					}
+				}
+
+				checkbit ++;
+			}
+			
         } /* end of  for (int group = 0; group < totalgroup; group ++) */
     } /* end of  if (spare_line_enable_) */
     /* if permanet fault is not zero, set port fault */
     else
     {
-        for (int bit = 0; bit < m_flit_size * ATOM_WIDTH_; bit ++)
+        m_port_fault_units[phy].setConstantState(false);
+		for (int bit = 0; bit < m_network_cfg->dataPathWidth(); bit ++)
         {
             /* input bit position */
             long byteid = bit / ATOM_WIDTH_;
@@ -361,19 +376,11 @@ spare_line_pattern_[phy][byteid] |
             /* if the value is 1, add in spare line patten */
             if ( m_link_fault_units[phy].faultPoint( bit ).currentStateOut() )
             {
-//                FoundationRouter(m_input_neighbor_addr[phy].first).
-//                    setPortFault(m_input_neighbor_addr[phy].second, true);
-//                FoundationRouter(in_neighbor_addr_[phy].first).check_fault();
-//                cout << "report fault port (" << id_ << "," << phy << ")" << 
-endl;
-//                cout << "fault port (" << in_neighbor_addr_[phy].first << "," 
-<< in_neighbor_addr_[phy].second << ")" << endl;
+				m_port_fault_units[phy].setConstantState(true);
                 break;
             }
-        } /* end of  for (int bit = 0; bit < flit_size_ * ATOM_WIDTH_; bit ++) 
-*/
+        }
     }
-#endif
 }
 /*
 void EsynetRouter::checkFault()
@@ -397,8 +404,12 @@ void EsynetRouter::eccBuffer()
         if ( m_ecc_units[ phy ].eccEnable() && 
             m_ecc_units[ phy ].bufferState() )
         {
-            receiveFlitInBuffer( phy, m_ecc_units[ phy ].vcToGo(), 
-                m_ecc_units[ phy ].getFlit() );
+			EsynetFlit flit_t = m_ecc_units[ phy ].getFlit();
+			if (flit_t.drop())
+			{
+				reportFault(phy);
+			}
+            receiveFlitInBuffer( phy, m_ecc_units[ phy ].vcToGo(), flit_t );
         }
     }
 }

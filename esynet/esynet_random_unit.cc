@@ -25,20 +25,19 @@ EsynetSRGen * EsynetSRGen::mp_global_pointer = 0;
 double EsynetSRGen::PI = 3.141592658979323846;
 
 EsynetSRGen::EsynetSRGen() :
-    m_seed( 1 ), m_idum( 1 )
+    m_idum( 1 )
 {
     mp_global_pointer = this;
 }
 
 EsynetSRGen::EsynetSRGen( long a ) :
-    m_seed( a ), m_idum( 1 )
+    m_idum( a )
 {
     mp_global_pointer = this;
 }
 
 void EsynetSRGen::setSeed( long a )
 {
-    m_seed = a;
     m_idum = a;
 }
 

@@ -157,6 +157,15 @@ EsynetMessEvent EsynetMessEvent::generateWireMessage(
 	return e;
 }
 
+EsynetMessEvent EsynetMessEvent::generateNIReadMessage(double time, long ni)
+{
+	EsynetMessEvent e;
+	e.m_event_time = time;
+	e.m_mess_type = NIREAD;
+	e.m_src_id = ni;
+	return e;
+}
+
 /*************************************************
   Function : 
     MessEvent::MessEvent( double time, EventType mtype, long src, long srcport,

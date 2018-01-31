@@ -36,8 +36,8 @@ Copyright (C) 2015, Junshi Wang <>
 #define PSOUTH1		VCType(2,0)
 #define PWEST		VCType(3,0)
 #define PEAST		VCType(4,0)
-#define PNORTH2		VCType(5,0)
-#define PSOUTH2		VCType(6,0)
+#define PNORTH2		VCType(1,1)
+#define PSOUTH2		VCType(2,1)
 #define DNORTH1		1
 #define DSOUTH1		2
 #define DWEST		3

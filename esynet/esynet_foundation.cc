@@ -26,9 +26,11 @@ EsynetFoundation::EsynetFoundation(
     m_network_cfg( network_cfg ),
     m_argument_cfg( argument_cfg ),
     m_statistic(),
+    m_packet_generator(network_cfg, argument_cfg),
     m_latency_measure_state( MEASURE_INIT ),
     m_throughput_measure_state( MEASURE_INIT ),
-    m_injection_state( MEASURE_INIT )
+    m_injection_state( MEASURE_INIT ),
+    m_received_id_offset( 0 )
 {
     long router_num = m_network_cfg->routerCount();
 
@@ -109,7 +111,7 @@ void EsynetFoundation::receiveEvgMessage(const EsynetMessEvent & mesg)
     long mesg_id = mesg.flit().flitId();
     if ( mesg_id < 0 )
     {
-        mesg_id = m_statistic.injectPacket();
+        mesg_id = m_statistic.injectedPacket();
     }
 
     long flag = mesg.flit().flitFlag();
@@ -121,11 +123,9 @@ void EsynetFoundation::receiveEvgMessage(const EsynetMessEvent & mesg)
 	EsynetFlit t_flit = mesg.flit();
     m_ni_list[ mesg.srcId() ].injectPacket( 
 		EsynetFlit(mesg_id, t_flit.flitSize(), EsynetFlit::FLIT_HEAD, 
-t_flit.sorAddr(),
-        t_flit.desAddr(), m_current_time, t_flit.e2eStartTime(), DataType(), 
-        flag, t_flit.ack() ) );
-
-    m_statistic.incInjectPacket();
+		t_flit.sorAddr(), t_flit.desAddr(), m_current_time, 
+		t_flit.e2eStartTime(), DataType(), flag, t_flit.ackPacket() ) );
+	m_statistic.incInjectPacket(m_current_time);
 }
 
 void EsynetFoundation::receiveRouterMessage(const EsynetMessEvent & mesg)
@@ -135,6 +135,15 @@ void EsynetFoundation::receiveRouterMessage(const EsynetMessEvent & mesg)
             
     if ( mesg.pipeTime() == PIPE_DELAY_  )
     {
+		vector< EsynetFlit > pac_list = m_packet_generator.generatePacket();
+		for (size_t i = 0; i < pac_list.size(); i ++)
+		{
+			EsynetFlit flit_t = pac_list[i];
+			addEvent(EsynetMessEvent::generateEvgMessage(m_current_time, 
+				flit_t.sorAddr(), flit_t.desAddr(), flit_t.flitSize(), 
+				flit_t.flitId(), m_current_time));
+		}
+		
         for ( long i = 0; i < m_network_cfg->routerCount(); i ++ ) 
         {
             if ( m_network_cfg->router( i ).pipeCycle() == PIPE_DELAY_  )
@@ -142,9 +151,25 @@ void EsynetFoundation::receiveRouterMessage(const EsynetMessEvent & mesg)
                 m_ni_list[ i ].runBeforeRouter();
                 m_router_list[ i ].routerSimPipeline();
                 m_ni_list[ i ].runAfterRouter();
+				updateStatistic(m_ni_list[i].acceptList());
+#ifndef ESYNETINTERFACE
+				m_ni_list[i].clearAcceptList();
+#endif
             }
         }
-        updateStatistic();
+        
+		while (m_received_id.size() > 0)
+		{
+			if (m_received_id[0])
+			{
+				m_received_id_offset ++;
+				m_received_id.erase(m_received_id.begin());
+			}
+			else
+			{
+				break;
+			}
+		}
         informationPropagate();
     }
     else
@@ -152,6 +177,10 @@ void EsynetFoundation::receiveRouterMessage(const EsynetMessEvent & mesg)
         m_ni_list[ mesg.srcId() ].runBeforeRouter();
         m_router_list[ mesg.srcId() ].routerSimPipeline();
         m_ni_list[ mesg.srcId() ].runAfterRouter();
+		updateStatistic(m_ni_list[ mesg.srcId() ].acceptList());
+#ifndef ESYNETINTERFACE
+		m_ni_list[ mesg.srcId() ].clearAcceptList();
+#endif
     }
 }
 
@@ -171,7 +200,7 @@ void EsynetFoundation::receiveWireMessage(const EsynetMessEvent & mesg)
     if ( mesg.desId() >= m_network_cfg->routerCount() )
     {
         m_ni_list[ mesg.desId() - m_network_cfg->routerCount() ].
-            receivePacket( mesg.desVc(), mesg.flit() );
+            receiveFlit( mesg.desVc(), mesg.flit() );
     }
     else
     {
@@ -193,6 +222,12 @@ void EsynetFoundation::receiveCreditMessage(const EsynetMessEvent & mesg)
             mesg.desPc(), mesg.desVc(), mesg.flit().flitId() );
     }
 }
+
+void EsynetFoundation::receiveNiReadMessage(const EsynetMessEvent& mesg)
+{
+	m_ni_list[ mesg.srcId() ].receivePacketHandler();
+}
+
 
 void EsynetFoundation::simulationResults()
 {
@@ -248,34 +283,34 @@ void EsynetFoundation::simulationResults()
     }
         
     double average_latency = 0.0;
-    if ( ni_statistic.acceptMarkPacket() > 0 )
+    if ( m_statistic.acceptMarkPacket() > 0 )
     {
         average_latency =
-            ni_statistic.totalMarkDelay() / ni_statistic.acceptMarkPacket();
+            m_statistic.totalMarkDelay() / m_statistic.acceptMarkPacket();
     }
     double deliver_rate = 0.0;
-    if ( ni_statistic.injectPacket() > 0 )
+    if ( ni_statistic.injectedPacket() > 0 )
     {
         deliver_rate = (double)ni_statistic.nonDropPacket() / 
-            (double)ni_statistic.injectPacket();
+            (double)ni_statistic.injectedPacket();
     }
     double average_e2e_delay = 0.0;
-    if ( ni_statistic.acceptPacket() > 0 )
+    if ( ni_statistic.acceptedPacket() > 0 )
     {
-        average_e2e_delay = ni_statistic.totalE2EAckDelay() / 
-            (double)ni_statistic.acceptPacket(); 
+        average_e2e_delay = m_statistic.totalE2EDelay() / 
+            (double)m_statistic.acceptedPacket(); 
     }
     double packet_inject_rate = 0.0;
     if ( m_statistic.injectStopTime() - m_statistic.injectStartTime() > 0 )
     {
-        packet_inject_rate = ni_statistic.injectPacket() / 
+        packet_inject_rate = ni_statistic.injectedPacket() / 
             ( m_statistic.injectStopTime() - m_statistic.injectStartTime() );
     }
 
     cout.precision(6);
     cout << "**** General Information *************************" << endl;
-    cout << "packet injected:      " << ni_statistic.injectPacket() << endl;
-    cout << "total finished:       " << ni_statistic.acceptPacket() << endl;
+    cout << "packet injected:      " << ni_statistic.injectedPacket() << endl;
+    cout << "total finished:       " << ni_statistic.acceptedPacket() << endl;
     cout << "average Delay:        " << average_latency << endl;
     cout << "**** Power Consumption ***************************" << endl;
     cout << "total mem power:      " << 
@@ -289,8 +324,8 @@ void EsynetFoundation::simulationResults()
     cout << "total power:          " << 
         total_power * POWER_NOM_ << endl;
     cout << "**** Latency/Throughput Measurement **************" << endl;
-    cout << "measured delay:       " << ni_statistic.totalMarkDelay() << endl;
-    cout << "marked packet:        " << ni_statistic.acceptMarkPacket() << endl;
+    cout << "measured delay:       " << m_statistic.totalMarkDelay() << endl;
+    cout << "marked packet:        " << m_statistic.acceptMarkPacket() << endl;
     cout << "marked latency:       " << average_latency << endl;
     cout << "measured finished:    " << throughput_measure_packet << endl;
     cout << "measured cycle:       " << throughput_measure_cycle  << endl;
@@ -307,16 +342,16 @@ void EsynetFoundation::simulationResults()
 
     /* print result for parallel */
     LINK_RESULT_APPEND( 12,
-        (double)ni_statistic.injectPacket(),
-        (double)ni_statistic.acceptPacket(),
+        (double)ni_statistic.injectedPacket(),
+        (double)ni_statistic.acceptedPacket(),
         average_latency, throughput_measure, packet_inject_rate,
         (double)statistics_unit.bistEmptyCounter(),
         (double)statistics_unit.bistEmptyCycle(),
         (double)statistics_unit.bistRecoverCounter(),
         (double)statistics_unit.bistRecoverCycle(),
         average_e2e_delay,
-		ni_statistic.acceptStartTime(),
-		ni_statistic.acceptStopTime()
+		(double)ni_statistic.retransmissionPacket(),
+		(double)m_statistic.acceptedPacket()
     )
     LINK_RESULT_OUT
 }
@@ -339,6 +374,7 @@ void EsynetFoundation::eventHandler(double time, const EsynetMessEvent& mess)
 	case EsynetMessEvent::ROUTER: receiveRouterMessage(mess); break;
 	case EsynetMessEvent::WIRE: receiveWireMessage(mess); break;
 	case EsynetMessEvent::CREDIT: receiveCreditMessage(mess); break;
+	case EsynetMessEvent::NIREAD: receiveNiReadMessage(mess); break;
         default:
             cout << "This message type " << mess.eventType() << 
                     " is not supported.\n";
@@ -366,24 +402,48 @@ void EsynetFoundation::eventHandler(double time, const EsynetMessEvent& mess)
     }
 }
 
-void EsynetFoundation::updateStatistic()
+void EsynetFoundation::updateStatistic(const vector< EsynetMessEvent > & accepted)
 {
-	EsynetNIStatistic ni_statistic;
-    for ( size_t i = 0; i < m_ni_list.size(); i ++ )
-    {
-        ni_statistic.add( m_ni_list[ i ].statistic() );
-    }
-    
+	for (size_t i = 0; i < accepted.size(); i ++)
+	{
+		long flit_id = accepted[i].flit().flitId();
+		if (flit_id < m_received_id_offset)
+		{
+			continue;
+		}
+		long flit_id_offset = flit_id - m_received_id_offset;
+		if (flit_id_offset < m_received_id.size())
+		{
+			if (m_received_id[flit_id_offset])
+			{
+				continue;
+			}
+		}
+		
+		m_statistic.incAcceptPacket(m_current_time, 
+			m_current_time - accepted[i].flit().e2eStartTime() );
+		if (accepted[i].flit().marked())
+		{
+			m_statistic.incAcceptMarkPacket(
+				m_current_time - accepted[i].flit().e2eStartTime() );
+		}
+		
+		if (m_received_id.size() <= flit_id_offset)
+		{
+			for (int i = m_received_id.size(); i < flit_id_offset; i ++)
+			{
+				m_received_id.push_back(false);
+			}
+			m_received_id.push_back(true);
+		}
+		else
+		{
+			m_received_id[flit_id_offset] = true;
+		}
+	}
+	
     if ( m_argument_cfg->injectedPacket() >= 0 &&
-         ni_statistic.injectPacket() >= m_argument_cfg->injectedPacket() )
-    {
-        for ( size_t i = 0; i < m_ni_list.size(); i ++ )
-        {
-            m_ni_list[ i ].setGeneratePacketEnable( false );
-        }
-    }
-    if ( m_argument_cfg->injectedPacket() >= 0 &&
-         ni_statistic.acceptPacket() >= m_argument_cfg->injectedPacket() )
+         m_statistic.acceptedPacket() >= m_argument_cfg->injectedPacket() )
     {
         m_injection_state = MEASURE_END;
     }
@@ -391,21 +451,21 @@ void EsynetFoundation::updateStatistic()
     switch ( m_latency_measure_state )   
     {
     case MEASURE_INIT:
-        if ( ni_statistic.injectPacket() >= m_argument_cfg->warmUpPacket() )
+        if ( m_statistic.injectedPacket() >= m_argument_cfg->warmUpPacket() )
         {
             m_latency_measure_state = MEASURE_PRE;
         }
         break;
     case MEASURE_PRE:
         if ( ( m_argument_cfg->latencyMeasurePacket() >= 0 ) &&
-             ( ni_statistic.injectPacket() >= m_argument_cfg->warmUpPacket() + 
+             ( m_statistic.injectedPacket() >= m_argument_cfg->warmUpPacket() + 
                m_argument_cfg->latencyMeasurePacket() ) )
         {
             m_latency_measure_state = MEASURE_ING;
         }
     case MEASURE_ING:
         if ( ( m_argument_cfg->latencyMeasurePacket() >= 0 ) &&
-            ( ni_statistic.acceptMarkPacket() >=
+            ( m_statistic.acceptMarkPacket() >=
                 m_argument_cfg->latencyMeasurePacket() ) )
         {
             m_latency_measure_state = MEASURE_END;
@@ -416,20 +476,20 @@ void EsynetFoundation::updateStatistic()
     switch ( m_throughput_measure_state )   
     {
     case MEASURE_INIT:
-        if ( ni_statistic.acceptPacket() >= m_argument_cfg->warmUpPacket() )
+        if ( m_statistic.acceptedPacket() >= m_argument_cfg->warmUpPacket() )
         {
             m_throughput_measure_state = MEASURE_ING;
             m_statistic.setThroughputMeasureStartTime( m_current_time );
             m_statistic.setThroughputMeasureStartPacket( 
-                ni_statistic.acceptPacket() );
+                m_statistic.acceptedPacket() );
         }
         break;
     case MEASURE_ING:
         m_statistic.setThroughputMeasureStopTime( m_current_time );
         m_statistic.setThroughputMeasureStopPacket( 
-                        ni_statistic.acceptPacket() );
+                        m_statistic.acceptedPacket() );
         if ( m_argument_cfg->throughputMeasurePacket() >= 0 &&
-            ni_statistic.acceptPacket() >= m_argument_cfg->warmUpPacket() + 
+            m_statistic.acceptedPacket() >= m_argument_cfg->warmUpPacket() + 
             m_argument_cfg->throughputMeasurePacket() )
         {
             m_throughput_measure_state = MEASURE_END;
@@ -465,7 +525,7 @@ void EsynetFoundation::informationPropagate()
                 m_router_list[ id ].setBistPortState( phy, 
                     m_router_list[ t_neighbor_id ].
                     bistPortState( t_neighbor_port ) );
-                
+
                 long t_corner_in_port = 0;
                 switch ( phy )
                 {

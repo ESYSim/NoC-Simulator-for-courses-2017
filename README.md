@@ -1,1 +1,1 @@
-# NoC-Simulator-for-courses-2017
+# NoC-ESL-Simulator

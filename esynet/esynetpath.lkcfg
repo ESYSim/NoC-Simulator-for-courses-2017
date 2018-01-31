@@ -13,6 +13,8 @@
     <Argu argument="-routing_alg" loop="" value="XY" note="Code of chosen routing algorithm&#x0A;Options: XY, TXY, DyXY, FTLR, HiPFaR, CoreRescuer, ERescuer, AlterTest, NonBlock, " type="11" darg="" dval="0" extension="" />
     <Argu argument="-random_seed" loop="" value="1" note="random seed used for generate random number" type="1" darg="" dval="0" extension="" />
     <Argu argument="-simulation_period" loop="" value="1" note="simulation period, #cycle" type="2" darg="" dval="0" extension="" />
+    <Argu argument="-ni_buffer_size" loop="" value="1" note="Buffer size of NI, #unit" type="1" darg="" dval="0" extension="" />
+    <Argu argument="-ni_read_delay" loop="" value="0" note="Read delay of NI, #cycle" type="1" darg="" dval="0" extension="" />
     <Argu argument="-max_hop" loop="" value="20" note="maximun hop count, i.e. 20 hops" type="2" darg="" dval="0" extension="" />
     <Argu argument="-path_pair_file_text_enable" loop="" value="0" note="path pair file is text format" type="3" darg="" dval="0" extension="" />
     <Argu argument="-path_pair_file_name" loop="" value="../example/pathpair" note="path pair file name, including the information about &#x09;&#x09;&#x09;packet injection" type="10" darg="" dval="0" extension="ppair" />

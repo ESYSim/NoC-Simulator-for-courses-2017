@@ -441,6 +441,7 @@ public:
 		CONFIG_PATH_EVENT_FILE = 0x040L,
 		CONFIG_FAULT_INJECTION_FILE = 0x080L,
 		CONFIG_ECC = 0x100L,
+		CONFIG_SW = 0x2000L,
 		CONFIG_E2E = 0x200L,
 		CONFIG_BIST = 0x400L,
 		CONFIG_END_CONDITION = 0x800l,
@@ -448,7 +449,7 @@ public:
 		CONFIG_NETWORK = 
 			CONFIG_NETWORK_CFG | CONFIG_SIM_LENGTH | CONFIG_TRAFFIC_INJECTION |
 			CONFIG_OUTPUT_TRAFFIC_FILE | CONFIG_EVENT_TRACE_FILE | 
-			CONFIG_FAULT_INJECTION_FILE | CONFIG_ECC | CONFIG_E2E |
+			CONFIG_FAULT_INJECTION_FILE | CONFIG_ECC | CONFIG_SW | CONFIG_E2E |
 			CONFIG_BIST | CONFIG_END_CONDITION,
 		CONFIG_PATH = 
 			CONFIG_NETWORK_CFG | CONFIG_MAX_HOP | CONFIG_PATH_PAIR_FILE |
@@ -456,7 +457,7 @@ public:
 		CONFIG_INTERFACE = 
 			CONFIG_NETWORK_CFG | CONFIG_SIM_LENGTH |
 			CONFIG_OUTPUT_TRAFFIC_FILE | CONFIG_EVENT_TRACE_FILE | 
-			CONFIG_FAULT_INJECTION_FILE | CONFIG_ECC | CONFIG_E2E |
+			CONFIG_FAULT_INJECTION_FILE | CONFIG_ECC | CONFIG_SW | CONFIG_E2E |
 			CONFIG_BIST,
 	};
 
@@ -548,6 +549,13 @@ private:
 	long m_ecc_space;     /**< \brief ecc space name */
 	///@}
 
+	/** @name Spare Wire */
+	///@{
+	bool m_sw_enable; /**< \brief spare wire enable */
+	bool m_sw_fip_enable; /**< \brief spare wire fault injection */
+	vector< long > m_sw_capacity; /**< \brief capacity of sw. */
+	///@}
+
 	/** @name ACK and retransmission */
 	///@{
 	bool m_e2e_ack_enable; /**< \brief ack enable */
@@ -564,6 +572,12 @@ private:
 	vector< long > m_bist_timing; /**< \brief router bist duration */
 	vector< long > m_bist_flit; /**< \brief injected testing flit for bist */
 	long m_bist_offset; /**< \brief offset of testing sequence */
+	///@}
+
+	/** @name NI buffer size */
+	///@{
+	long m_ni_buffer_size; /**< \brief size of buffer in ni */
+	long m_ni_read_delay; /**< \brief delay of ni read */
 	///@}
 
 public:
@@ -877,6 +891,13 @@ public:
 		* \return #m_ecc_space.
 		*/
 	long eccSpace() const { return m_ecc_space; }
+	
+	long niBufferSize() const { return m_ni_buffer_size; }
+	long niReadDelay() const { return m_ni_read_delay; }
+	
+	bool swEnable() const { return m_sw_enable; }
+	bool swFipEnable() const { return m_sw_fip_enable; }
+	const vector< long > swCapacity() const { return m_sw_capacity; }
 	///@}
 	
 	void preDefineCheck();

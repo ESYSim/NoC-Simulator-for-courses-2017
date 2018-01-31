@@ -112,8 +112,8 @@ enum ECCMethod
 {
 	ECC_HM74,
 	ECC_HM128,
-	ECC_HM2216,
-	ECC_HM3932,
+	ECC_HM2116,
+	ECC_HM3832,
 };
 
 enum ECCStrategy

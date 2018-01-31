@@ -66,9 +66,14 @@ EsynetConfig::EsynetConfig(EsynetConfig::ConfigType type) :
 	m_fault_inject_file_name( "../example/faultinject" ),
 
 	m_ecc_enable( false ),
+	m_ecc_fip_enable( false ),
 	m_ecc_name( ECC_HM74 ),
 	m_ecc_strategy( ECC_H2H ),
 	m_ecc_space( 1 ),
+
+	m_sw_enable( false ),
+	m_sw_fip_enable( false ),
+	m_sw_capacity( 0, 0 ),
 
 	m_e2e_ack_enable( false ),
 	m_e2e_retrans_enable( false ),
@@ -84,7 +89,10 @@ EsynetConfig::EsynetConfig(EsynetConfig::ConfigType type) :
 	m_injected_packet( -1 ),
 	m_warmup_packet( 0 ),
 	m_latency_measure_packet( -1 ),
-	m_throughput_measure_packet( -1 )
+	m_throughput_measure_packet( -1 ),
+	
+	m_ni_buffer_size( 1 ),
+	m_ni_read_delay( 0 )
 {
 	insertVariables( type );
 }
@@ -132,9 +140,14 @@ EsynetConfig::EsynetConfig(int argc, char * const argv[], ConfigType type) :
 	m_fault_inject_file_name( "../example/faultinject" ),
 
 	m_ecc_enable( false ),
+	m_ecc_fip_enable( false ),
 	m_ecc_name( ECC_HM74 ),
 	m_ecc_strategy( ECC_H2H ),
 	m_ecc_space( 1 ),
+	
+	m_sw_enable( false ),
+	m_sw_fip_enable( false ),
+	m_sw_capacity( 0, 0 ),
 
 	m_e2e_ack_enable( false ),
 	m_e2e_retrans_enable( false ),
@@ -150,7 +163,10 @@ EsynetConfig::EsynetConfig(int argc, char * const argv[], ConfigType type) :
 	m_injected_packet( -1 ),
 	m_warmup_packet( 0 ),
 	m_latency_measure_packet( -1 ),
-	m_throughput_measure_packet( -1 )
+	m_throughput_measure_packet( -1 ),
+
+	m_ni_buffer_size( 1 ),
+	m_ni_read_delay( 0 )
 {
 	insertVariables( type );
 
@@ -230,6 +246,11 @@ void EsynetConfig::insertVariables(ConfigType type)
 	insertDouble( "-simulation_period", 
 		"simulation period, #cycle", 
 		&m_simulation_period );
+	
+	insertLong( "-ni_buffer_size", "Buffer size of NI, #unit", 
+		&m_ni_buffer_size );
+	insertLong( "-ni_read_delay", "Read delay of NI, #cycle",
+		&m_ni_read_delay );
 
 	if ( ( type & CONFIG_SIM_LENGTH ) > 0 )
 	{
@@ -380,8 +401,8 @@ void EsynetConfig::insertVariables(ConfigType type)
 			&m_ecc_fip_enable, "-ecc_enable", 1 );
 		m_ecc_name.addOption(ECC_HM74, "HM74");
 		m_ecc_name.addOption(ECC_HM128, "HM128");
-		m_ecc_name.addOption(ECC_HM2216, "HM2216");
-		m_ecc_name.addOption(ECC_HM3932, "HM3932");
+		m_ecc_name.addOption(ECC_HM2116, "HM2116");
+		m_ecc_name.addOption(ECC_HM3832, "HM3832");
 		insertEnum("-ecc_name",
 			"name of Error Correcting Code", 
 			&m_ecc_name, "-ecc_enable", 1 );
@@ -397,6 +418,19 @@ void EsynetConfig::insertVariables(ConfigType type)
 		insertLong( "-ecc_space", 
 			"space for ecc strategy, invalid for E2E or H2H", 
 			&m_ecc_space, "-ecc_enable", 1 );
+	}
+
+	if ( ( type & CONFIG_SW ) > 0 )
+	{
+		insertBool( "-sw_enable", 
+			"Enable Spare Wire", 
+			&m_sw_enable );
+		insertBool( "-sw_fip_enable", 
+			"Enable Fault Injection of SW", 
+			&m_ecc_fip_enable, "-sw_enable", 1 );
+		insertLongVector( "-sw_capacity",
+			"Capacity of SW. First is the size of group and second is the number of spare wires.",
+			&m_sw_capacity, "-sw_enable", 1);
 	}
 
 	if ( ( type & CONFIG_E2E ) > 0 )
